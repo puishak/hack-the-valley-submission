@@ -1,3 +1,4 @@
+from turtle import right
 import cv2
 import mediapipe as mp
 import PoseModule as pm
@@ -13,10 +14,10 @@ class SquatCheck:
         self.direction = False # False means down
         self.detector = pm.poseDetector()
         self.count = 0
-        self.score = []
+        self.scores = []
         self.repStarted = False
         self.checkAngle = 0
-        self.tempLandMarks = None
+        self.tempScore = None
         
     def check(self,img):
         # output [img(count,landmarks,progressbar), count, progress]
@@ -29,15 +30,16 @@ class SquatCheck:
             if self.repStarted:
                 if progress < THRESHOLD:
                     self.repStarted = False
-                    self.score.append(checkScore(self.tempLandMarks))
+                    self.scores.append(self.tempScore)
                     self.count += 1
-                    # calculate the score append it to self.score
+                    
                 if hipAngle < self.checkAngle:
                     self.checkAngle = hipAngle
-                    self.tempLandMarks = self.detector.lmlist
+                    self.tempScore = self.checkScore()
             else:
                 if progress > THRESHOLD:
                     self.repStarted = True
+                    
             img = self.detector.draw(RIGHT)
             return img, self.count, progress
         else:
@@ -47,54 +49,34 @@ class SquatCheck:
     def getScore(self):
         return self.getScore
     
-    def countRep(self,img):
-        count = 0
-        return 0
+    def checkScore(self):
+        return 4 * self.backAngleScore() + 4 * self.depthScore() + 2 * self.kneeScore()
     
-    # def checkScore(self,backPoint,depthPoint,kneePoint):
-    #     score = 4 * backAngleScore(right[0], right[1])
-    #     + 4 * depthScore(lmlist, right[1], right[2])
-    #     + 2 * kneeScore(lmlist, right[2], right[5])
+    def backAngleScore(self):
+        backAngle = int(self.detector.angle_from_horizontal(RIGHT[1],RIGHT[0]))
+        diff = abs((backAngle % 90)-45)
+        if diff <= 45:
+            return 1 - diff / 45
+        else:
+            return -1
     
+    def depthScore(self):
+        _, hipY = self.detector.lmlist[RIGHT[1]]
+        _, kneeY = self.detector.lmlist[RIGHT[2]]
+        if hipY >= kneeY:
+            score = 1
+        else:
+            angle = int(self.detector.angle_from_horizontal(RIGHT[2], RIGHT[1]))
+            score = np.interp(angle, (90, 0), (0, 1))
+        return score
     
-    
-    # def backAngleScore(self,back, hip):
-    #     backAngle = int(self.detector.angle_from_horizontal(hip,back))
-    #     diff = abs((backAngle % 90)-45)
-    #     if diff <= 45:
-    #         return 1 - diff / 45
-    #     else:
-    #         return -1
-        
-
-
-    # if angle <= 45:
-    #     score = np.interp(angle, (0, 45), (0, 1))
-    # else:
-    #     score = np.interp(angle, (90, 45), (0, 1))
-        
-
-def checkScore(lm):
-    return 0
-
-# def depthScore(eelf, lmlist, hip, knee):
-#     _, hipY = lmlist[hip][1:]
-#     _, kneeY = lmlist[knee][1:]
-#     if hipY >= kneeY:
-#         score = 1
-#     else:
-#         angle = int(self.detector.angle_from_horizontal(knee, hip))
-#         score = np.interp(angle, (90, 0), (0, 1))
-#     return score
-
-
-# def kneeScore(lmlist, knee, foot):
-#     kneeX, _ = lmlist[knee][1:]
-#     footX, _ = lmlist[foot][1:]
-#     if kneeX < footX:
-#         return 1
-#     else:
-#         return 0
+    def kneeScore(self):
+        kneeX, _ = self.detector.lmlist[RIGHT[2]]
+        footX, _ = self.detector.lmlist[RIGHT[4]]
+        if kneeX < footX:
+            return 1
+        else:
+            return 0
     
     
 if __name__ == "__main__":
@@ -119,7 +101,8 @@ if __name__ == "__main__":
                 6,
             )
 
-            print("count:", count, "; Progress:", int(progress*100))
+            # print("count:", count, "; Progress:", int(progress*100))
+            print(squat1.scores)
             cv2.imshow("this could be decided at the last minute!!!", img)
             key = cv2.waitKey(1)
             if key == 32:

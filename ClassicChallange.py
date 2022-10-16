@@ -2,6 +2,7 @@
 from Challenge import Challenge
 from squatCheck import SquatCheck
 import cv2
+import numpy as np
 
 TARGET_REPS = 10
 
@@ -31,9 +32,10 @@ class ClassicChallange(Challenge):
                 25,
             )
             
-            # Draw progress bar on the image
-            # cv2.rectangle(img, (1220, 150), (1260, 400), (0, 255, 0), 3)
-            # cv2.rectangle(img, (1220, progress * 100), (1260, 400), (0, 255, 0), cv2.FILLED)
+            #Draw progress bar on the image
+            cv2.rectangle(img, (1220, 150), (1260, 400), (0, 255, 0), 3)
+            bar = np.interp(progress, (0, 100), (400, 150))
+            cv2.rectangle(img, (1220, bar), (1260, 400), (0, 255, 0), cv2.FILLED)
             
             if count >= TARGET_REPS:
                 self.started = False

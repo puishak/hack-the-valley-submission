@@ -3,7 +3,7 @@ from Challenge import Challenge
 from squatCheck import SquatCheck
 import cv2
 
-DURATION = 40 #seconds
+DURATION = 10 #seconds
 
 
 class TimeAttackChallange(Challenge):
@@ -26,11 +26,11 @@ class TimeAttackChallange(Challenge):
             
             # cv2.putText(img, count, )
             # Draw count
-            cv2.rectangle(img, (20, 555), (170, 700), (0, 255, 0), cv2.FILLED)
+            # cv2.rectangle(img, (20, 555), (170, 700), (0, 255, 0), cv2.FILLED)
             cv2.putText(
                 img,
                 str(count),
-                (45, 675),
+                (45, 175),
                 cv2.FONT_HERSHEY_PLAIN,
                 10,
                 (255, 0, 0),
@@ -61,5 +61,22 @@ class TimeAttackChallange(Challenge):
         else:
             # Calculate total scores, and show end screen
             score = self.squat.getScore()
+            
+            if(len(score) != 0):
+                avg = sum(score)/len(score)
+            else:
+                avg = 0
+            
+            
+            cv2.putText(
+                img,
+                str(avg),
+                (45, 175),
+                cv2.FONT_HERSHEY_PLAIN,
+                10,
+                (255, 0, 0),
+                25,
+            )
+            
 
         return img
